@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Layout;
 import android.view.View;
@@ -30,7 +32,9 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.khanhho.drawer.Adapter.LoaispAdapter;
+import com.example.khanhho.drawer.Adapter.SanphamAdapter;
 import com.example.khanhho.drawer.Model.Loaisp;
+import com.example.khanhho.drawer.Model.Sanpham;
 import com.example.khanhho.drawer.R;
 import com.example.khanhho.drawer.ultil.Checkconnection;
 import com.example.khanhho.drawer.ultil.Server;
@@ -47,18 +51,28 @@ public class MainActivity extends AppCompatActivity
 
     DrawerLayout drawer;
     ViewFlipper viewFlipper;
-    RecyclerView recycleViewManHinhChinh;
-    ListView listViewManHinhChinh;
     Toolbar toolbar;
     NavigationView navigationView;
+    //listview menu bar
     ArrayList<Loaisp> mangloaisp;
     LoaispAdapter loaispAdapter;
     ListView listView;
-    int id = 0;
+    int idloaisp = 0;
     String tenloaisp = "";
     String hinhanhloaisp = "";
     TextView test;
     String khanh = "";
+
+// recycleview
+    ArrayList<Sanpham> mangsanpham;
+    SanphamAdapter sanphamAdapter;
+    RecyclerView recycleViewManHinhChinh;
+    int idsanpham = 0;
+    String tensanpham = "";
+    String hinmhanhsanpham = "";
+    int giasanpham = 0;
+    String motasanpham = "";
+    int idlsanpham = 0;
 
 
     @Override
@@ -70,20 +84,52 @@ public class MainActivity extends AppCompatActivity
             ActionViewFlipper();
             setSupportActionBar(toolbar);
             Getdulieuloaisp();
-
+            Getdulieusanphammoinhat();
         }else {
             Checkconnection.ShowToast_Short(getApplicationContext(),"ban hay tra lai ket noi");
             finish();
         }
-
-
-
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
     }
+
+    private void Getdulieusanphammoinhat() {
+        RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Server.duongdansanphammoinhat, new Response.Listener<JSONArray>() {
+            @Override
+            public void onResponse(JSONArray response) {
+                if (response != null){
+                    for (int i = 0; i <response.length(); i++){
+                        try{
+                            JSONObject jsonObject =response.getJSONObject(i);
+                            idsanpham = jsonObject.getInt("id");
+                            tensanpham = jsonObject.getString("tensp");
+                            hinmhanhsanpham = jsonObject.getString("hinhanhsp");
+                            motasanpham = jsonObject.getString("motasp");
+                            giasanpham= jsonObject.getInt("giasp");
+                            idlsanpham = jsonObject.getInt("idloaisp");
+                            mangsanpham.add(new Sanpham(idsanpham,tensanpham,giasanpham, hinmhanhsanpham,motasanpham,idlsanpham));
+                            sanphamAdapter.notifyDataSetChanged();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Checkconnection.ShowToast_Short(getApplicationContext(), error.toString());
+            }
+        });
+
+        requestQueue.add(jsonArrayRequest);
+    }
+
 
     private void Getdulieuloaisp() {
         RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
@@ -94,10 +140,10 @@ public class MainActivity extends AppCompatActivity
                     for (int i = 0; i <response.length(); i++){
                         try{
                             JSONObject jsonObject =response.getJSONObject(i);
-                            id = jsonObject.getInt("id");
+                            idloaisp = jsonObject.getInt("id");
                             tenloaisp = jsonObject.getString("tenloaisp");
                             hinhanhloaisp = jsonObject.getString("hinhanhloaisp");
-                            mangloaisp.add(new Loaisp(id,tenloaisp,hinhanhloaisp));
+                            mangloaisp.add(new Loaisp(idloaisp,tenloaisp,hinhanhloaisp));
                             loaispAdapter.notifyDataSetChanged();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -144,11 +190,19 @@ public class MainActivity extends AppCompatActivity
         drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         viewFlipper = (ViewFlipper)findViewById(R.id.viewlipper);
-//        recycleViewManHinhChinh = (RecyclerView)findViewById(R.id.recycleview);
+
         mangloaisp  = new ArrayList<>();
         mangloaisp.add(0,   new Loaisp(0,"Trang chinh", "http://i.imgur.com/DvpvklR.png"));
         loaispAdapter = new LoaispAdapter(mangloaisp,this);
         listView.setAdapter(loaispAdapter);
+
+        recycleViewManHinhChinh = (RecyclerView)findViewById(R.id.recycleview);
+        mangsanpham  = new ArrayList<>();
+//        test.setText(tensanpham);
+        sanphamAdapter = new SanphamAdapter(this,mangsanpham);
+        recycleViewManHinhChinh.setAdapter(sanphamAdapter);
+        recycleViewManHinhChinh.setLayoutManager(new LinearLayoutManager(this));
+        recycleViewManHinhChinh.setLayoutManager(new GridLayoutManager(this,2));
     }
 
 
